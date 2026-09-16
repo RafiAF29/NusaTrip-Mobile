@@ -2,12 +2,30 @@ import 'package:flutter/material.dart';
 import '../data/dummy_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav.dart';
-import '../widgets/category_card.dart';
 import '../widgets/destination_card.dart';
 import 'destination_detail_page.dart';
 
 class ExplorePage extends StatelessWidget {
   const ExplorePage({super.key});
+
+  // Icon lokal per kategori, dipakai supaya chip kategori di halaman ini
+  // tidak bergantung pada asset gambar (yang sebelumnya bikin overflow
+  // karena SafeImageAsset menampilkan ikon fallback ukuran 36px di dalam
+  // box tinggi 20px saat asset-nya gagal dimuat).
+  static IconData _categoryIcon(String title) {
+    switch (title.toLowerCase()) {
+      case 'alam':
+        return Icons.landscape_rounded;
+      case 'budaya':
+        return Icons.theater_comedy_rounded;
+      case 'sejarah':
+        return Icons.account_balance_rounded;
+      case 'religi':
+        return Icons.temple_buddhist_rounded;
+      default:
+        return Icons.explore_rounded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,32 +59,35 @@ class ExplorePage extends StatelessWidget {
             ),
 
             // Category Chips Row
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  CategoryCard(
-                    title: 'Semua',
-                    iconFileName: 'nature.png',
-                    isSelected: true,
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 8),
-                  ...DummyData.categories.map((cat) {
-                    final name = cat['name'] as String;
-                    final icon = cat['icon'] as String;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: CategoryCard(
-                        title: name,
-                        iconFileName: icon,
-                        isSelected: false,
-                        onTap: () {},
-                      ),
-                    );
-                  }),
-                ],
+            SizedBox(
+              height: 44,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _ExploreCategoryChip(
+                      title: 'Semua',
+                      icon: Icons.explore_rounded,
+                      isSelected: true,
+                      onTap: () {},
+                    ),
+                    const SizedBox(width: 8),
+                    ...DummyData.categories.map((cat) {
+                      final name = cat['name'] as String;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: _ExploreCategoryChip(
+                          title: name,
+                          icon: _categoryIcon(name),
+                          isSelected: false,
+                          onTap: () {},
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
 
@@ -132,6 +153,70 @@ class ExplorePage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: const BottomNav(currentIndex: 1),
+    );
+  }
+}
+
+// Chip kategori khusus untuk ExplorePage.
+// Dibuat lokal (bukan pakai CategoryCard/SafeImageAsset) supaya tidak lagi
+// tergantung file asset icon yang belum ada, sekaligus menghilangkan
+// "BOTTOM OVERFLOWED" yang muncul akibat ikon fallback lebih besar
+// daripada tinggi box-nya.
+class _ExploreCategoryChip extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ExploreCategoryChip({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bgColor = isSelected ? AppTheme.primary : Colors.white;
+    final Color textColor = isSelected ? Colors.white : AppTheme.darkBrown;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppTheme.primary : AppTheme.border,
+            width: 1.5,
+          ),
+          boxShadow: [
+            if (isSelected)
+              BoxShadow(
+                color: AppTheme.primary.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: textColor),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
