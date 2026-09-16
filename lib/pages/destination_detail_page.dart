@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
 import '../models/destination.dart';
+import '../models/tour_package.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/package_option_card.dart';
 import '../widgets/safe_image.dart';
-import 'customize_trip_page.dart';
+import 'ticket_page.dart';
 
-class DestinationDetailPage extends StatelessWidget {
+/// Destination detail page — StatefulWidget version.
+///
+/// Lists each bookable service (Paket Budaya, Guide Lokal, Homestay) as its
+/// own rich [PackageOptionCard]. Every card now shares the same functional
+/// quantity stepper (+/-) — Guide Lokal behaves exactly like Homestay and
+/// Paket Budaya, each with its own quantity kept in this page's state.
+///
+/// The per-card "Pesan Sekarang" buttons have been removed (there used to
+/// be 3, one per package). Booking now happens only through the single
+/// sticky bottom CTA, which is labeled "Pesan Sekarang" and takes the user
+/// straight to [TicketPage].
+class DestinationDetailPage extends StatefulWidget {
   final Destination destination;
 
   const DestinationDetailPage({
@@ -14,7 +27,100 @@ class DestinationDetailPage extends StatelessWidget {
   });
 
   @override
+  State<DestinationDetailPage> createState() => _DestinationDetailPageState();
+}
+
+class _DestinationDetailPageState extends State<DestinationDetailPage> {
+  /// Quantity per package, keyed by index in [_buildPackages] (0 = Paket
+  /// Budaya, 1 = Guide Lokal, 2 = Homestay). All three start at 1 and use
+  /// the exact same +/- stepper behaviour.
+  final Map<int, int> _quantities = {0: 1, 1: 1, 2: 1};
+
+  /// Builds the list of bookable packages for this destination.
+  ///
+  /// Falls back to sensible default copy (matching the reference designs)
+  /// whenever the destination doesn't have enough of its own data, so this
+  /// works for every destination in DummyData, not just Wae Rebo.
+  List<TourPackage> _buildPackages() {
+    final destination = widget.destination;
+    return [
+      TourPackage(
+        badge: 'Paket Budaya',
+        title: destination.name,
+        price: 'Rp200.000,00',
+        priceUnit: '/orang',
+        imagePath: destination.image,
+        description:
+            'Rumah adat ${destination.name}, yang dikenal sebagai Mbaru Niang, '
+            'adalah rumah tradisional berbentuk kerucut khas suku Manggarai '
+            'di Flores, Nusa Tenggara Timur.',
+        gallery: [destination.image, destination.image, destination.image],
+        items: destination.highlights.isNotEmpty
+            ? destination.highlights
+            : const [
+                'Workshop tenun ikat tradisional Manggarai bersama pengrajin lokal (2 jam)',
+                'Mengikuti ritual adat Todo (jika sedang berlangsung)',
+                'Sesi memasak makanan tradisional bersama ibu-ibu desa',
+                'Membawa pulang satu hasil kerajinan tangan mini sebagai kenang-kenangan',
+              ],
+      ),
+      TourPackage(
+        badge: 'Guide Lokal',
+        title: 'Guide Lokal Berpengalaman',
+        price: 'Rp150.000,00',
+        priceUnit: '/orang/grup(5)',
+        imagePath: destination.image,
+        description: destination.description,
+        gallery: [destination.image, destination.image, destination.image],
+        galleryExtraLabel: '15+',
+        items: const [
+          'Pemandu warga asli yang fasih berbahasa Indonesia',
+          'Tur keliling beserta penjelasan sejarah dan filosofi arsitektur',
+          'Cerita adat yang tidak ada di internet',
+          'Foto eksklusif di sudut-sudut terbaik yang hanya diketahui warga lokal',
+        ],
+      ),
+      TourPackage(
+        badge: 'Homestay',
+        title: 'Homestay & Pengalaman Budaya',
+        price: destination.price,
+        priceUnit: '/malam',
+        imagePath: destination.image,
+        description: destination.description,
+        gallery: [destination.image, destination.image, destination.image],
+        galleryExtraLabel: '20+',
+        items: destination.facilities.isNotEmpty
+            ? destination.facilities
+            : const [
+                'Menginap di rumah keluarga lokal warga desa',
+                'Interaksi langsung dengan keluarga tuan rumah',
+                'Kasur, selimut, dan perlengkapan tidur tradisional',
+                'Makan bersama keluarga tuan rumah',
+                'Menu masakan tradisional berbahan lokal',
+              ],
+      ),
+    ];
+  }
+
+  void _goToTicketPage(BuildContext context) {
+    final destination = widget.destination;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TicketPage(
+          destinationName: destination.name,
+          location: destination.location,
+          totalPrice: destination.price,
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final destination = widget.destination;
+    final packages = _buildPackages();
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Stack(
@@ -171,159 +277,34 @@ class DestinationDetailPage extends StatelessWidget {
                           height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
-                      // Local Guide Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surface,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.person_pin_rounded, color: AppTheme.primary, size: 28),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    'Guide Lokal Berpengalaman',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.darkBrown,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Rp150.000 / orang',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppTheme.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.check_circle_rounded, color: AppTheme.mutedGreen, size: 22),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Homestay Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surface,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.home_work_rounded, color: AppTheme.primary, size: 28),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Homestay & Pengalaman Budaya',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.darkBrown,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    destination.price,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppTheme.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.check_circle_rounded, color: AppTheme.mutedGreen, size: 22),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // "Yang Didapatkan" Checklist
+                      // Paket & Layanan — rich package cards
+                      // (Paket Budaya / Guide Lokal / Homestay), each with
+                      // its own working +/- quantity stepper and no
+                      // per-card order button anymore.
                       const Text(
-                        'Yang Didapatkan',
+                        'Paket & Layanan',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.darkBrown,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      ...destination.highlights.map((item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_circle_outline_rounded, size: 18, color: AppTheme.primary),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    item,
-                                    style: const TextStyle(fontSize: 13, color: AppTheme.darkBrown),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
+                      const SizedBox(height: 14),
+                      ...List.generate(packages.length, (index) {
+                        return PackageOptionCard(
+                          package: packages[index],
+                          quantity: _quantities[index] ?? 1,
+                          onQuantityChanged: (newQty) {
+                            setState(() {
+                              _quantities[index] = newQty;
+                            });
+                          },
+                        );
+                      }),
 
-                      const SizedBox(height: 24),
-
-                      // Facilities Chips
-                      const Text(
-                        'Fasilitas',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.darkBrown,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: destination.facilities
-                            .map((f) => Chip(
-                                  label: Text(f, style: const TextStyle(fontSize: 12, color: AppTheme.darkBrown)),
-                                  backgroundColor: AppTheme.surface,
-                                  side: BorderSide.none,
-                                ))
-                            .toList(),
-                      ),
-
-                      const SizedBox(height: 100), // Bottom padding for sticky CTA button
+                      const SizedBox(height: 90), // Bottom padding for sticky CTA button
                     ],
                   ),
                 ),
@@ -373,16 +354,9 @@ class DestinationDetailPage extends StatelessWidget {
                     const SizedBox(width: 20),
                     Expanded(
                       child: CustomButton(
-                        text: 'Customize Trip',
-                        icon: Icons.tune_rounded,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CustomizeTripPage(destination: destination),
-                            ),
-                          );
-                        },
+                        text: 'Pesan Sekarang',
+                        icon: Icons.confirmation_number_outlined,
+                        onPressed: () => _goToTicketPage(context),
                       ),
                     ),
                   ],
