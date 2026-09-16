@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../pages/explore_page.dart';
 import '../pages/home_page.dart';
+import '../pages/profile_page.dart';
 import '../pages/ticket_page.dart';
 import '../theme/app_theme.dart';
 
@@ -13,7 +14,7 @@ class BottomNav extends StatelessWidget {
   });
 
   void _onItemTapped(BuildContext context, int index) {
-    if (index == currentIndex && index != 3) return;
+    if (index == currentIndex) return;
 
     switch (index) {
       case 0:
@@ -36,95 +37,12 @@ class BottomNav extends StatelessWidget {
         );
         break;
       case 3:
-        _showProfileModal(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
+        );
         break;
     }
-  }
-
-  void _showProfileModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: AppTheme.background,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const CircleAvatar(
-              radius: 40,
-              backgroundColor: AppTheme.primary,
-              child: Icon(Icons.person_rounded, size: 45, color: Colors.white),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Aisyah Rahma',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.darkBrown,
-              ),
-            ),
-            const Text(
-              'aisyah.traveler@nusatrip.id',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textMuted,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Divider(color: AppTheme.border),
-            ListTile(
-              leading: const Icon(Icons.confirmation_number_outlined, color: AppTheme.primary),
-              title: const Text('Tiket Saya'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TicketPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bookmark_border_rounded, color: AppTheme.primary),
-              title: const Text('Destinasi Disimpan'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined, color: AppTheme.primary),
-              title: const Text('Pengaturan'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.pop(context),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.logout_rounded, color: AppTheme.primary),
-                label: const Text('Tutup Profile'),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
