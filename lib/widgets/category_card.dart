@@ -64,6 +64,7 @@ class CategoryCard extends StatelessWidget {
               width: 20,
               height: 20,
               fallbackIcon: _getCategoryIcon(title),
+              fallbackIconColor: textColor,
             ),
             const SizedBox(width: 8),
             Text(
