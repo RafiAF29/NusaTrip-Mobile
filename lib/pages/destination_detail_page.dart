@@ -32,7 +32,7 @@ class _PackageOption {
 
   static String _formatCurrency(double value) {
     final digits = value.toStringAsFixed(0);
-    final buffer = StringBuffer();
+    final buffer = StringBuffer(); 
     for (int i = 0; i < digits.length; i++) {
       final posFromEnd = digits.length - i;
       buffer.write(digits[i]);
