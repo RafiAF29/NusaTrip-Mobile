@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../models/destination.dart';
+import '../services/saved_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav.dart';
 import 'login_page.dart';
+import 'saved_page.dart';
 import 'ticket_page.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -95,14 +98,42 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Travel Stats Summary Cards
-              Row(
-                children: [
-                  _buildStatCard('1', 'Tiket Aktif', Icons.confirmation_number_outlined),
-                  const SizedBox(width: 12),
-                  _buildStatCard('6', 'Tersimpan', Icons.bookmark_border_rounded),
-                  const SizedBox(width: 12),
-                  _buildStatCard('4', 'Ulasan', Icons.star_border_rounded),
-                ],
+              ValueListenableBuilder<List<Destination>>(
+                valueListenable: SavedService.savedDestinationsNotifier,
+                builder: (context, savedList, child) {
+                  return Row(
+                    children: [
+                      _buildStatCard(
+                        context,
+                        '1',
+                        'Tiket Aktif',
+                        Icons.confirmation_number_outlined,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const TicketPage()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildStatCard(
+                        context,
+                        '${savedList.length}',
+                        'Tersimpan',
+                        Icons.bookmark_border_rounded,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SavedPage()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildStatCard(
+                        context,
+                        '4',
+                        'Ulasan',
+                        Icons.star_border_rounded,
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 28),
@@ -141,7 +172,12 @@ class ProfilePage extends StatelessWidget {
                       icon: Icons.bookmark_border_rounded,
                       title: 'Destinasi Disimpan',
                       subtitle: 'Daftar tempat impian favoritmu',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SavedPage()),
+                        );
+                      },
                     ),
                     const Divider(height: 1, indent: 56, endIndent: 16, color: AppTheme.border),
                     _buildProfileMenuItem(
@@ -204,36 +240,46 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.border),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppTheme.primary, size: 22),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.darkBrown,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: AppTheme.primary, size: 22),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.darkBrown,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppTheme.textMuted,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.textMuted,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -275,3 +321,4 @@ class ProfilePage extends StatelessWidget {
     );
   }
 }
+

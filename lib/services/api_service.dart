@@ -1,81 +1,76 @@
-import '../data/dummy_data.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/destination.dart';
-import '../models/ticket_model.dart';
 import '../models/user_model.dart';
 
-/// Centralized API / Database Service Provider
-///
-/// Siap dihubungkan langsung ke Firebase, Supabase, atau REST API HTTP.
-/// Saat ini memiliki fallback data lokal agar aplikasi tetap 100% berjalan offline.
 class ApiService {
-  static const String baseUrl = 'https://api.nusatrip.com/v1';
+  // ALAMAT IP:
+  // • 'http://10.0.2.2:8080/api'  ➔ Untuk Emulator Android
+  // • 'http://127.0.0.1:8080/api' ➔ Untuk Windows Desktop
+  static const String baseUrl = 'http://10.0.2.2:8080/api';
 
-  /// Mengambil daftar destinasi wisata dari Database / API
+  // 1. Ambil Katalog Destinasi dari Laravel MySQL
   static Future<List<Destination>> getDestinations({String? category}) async {
-    // Simulasi delay request jaringan (dapat diganti dengan panggilan http / firebase / supabase)
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    final allDestinations = DummyData.destinations;
-    if (category == null || category.isEmpty || category == 'Semua') {
-      return allDestinations;
+    String url = '$baseUrl/destinations';
+    if (category != null && category.isNotEmpty && category != 'Semua') {
+      url += '?category=$category';
     }
-    return allDestinations
-        .where((d) => d.category.toLowerCase() == category.toLowerCase())
-        .toList();
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((json) => Destination.fromJson(json)).toList();
+    } else {
+      throw Exception('Gagal memuat destinasi');
+    }
   }
 
-  /// Autentikasi Pengguna (Login) ke Database
+  // 2. Login Pengguna ke Server Laravel & Cek Password Ter-hash MySQL
   static Future<UserModel?> loginUser({
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (email.isNotEmpty && password.isNotEmpty) {
-      return UserModel(
-        id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
-        name: email.split('@').first,
-        email: email,
-        rewardPoints: 1250,
-      );
+    final response = await http.post(
+      Uri.parse('$baseUrl/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return UserModel.fromJson(data['user']);
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Email atau password salah');
     }
-    return null;
   }
 
-  /// Pendaftaran Pengguna Baru (Register) ke Database
+  // 3. Registrasi Pengguna Baru ke Database MySQL via Laravel
   static Future<UserModel?> registerUser({
     required String name,
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return UserModel(
-      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
-      name: name,
-      email: email,
-      rewardPoints: 500,
+    final response = await http.post(
+      Uri.parse('$baseUrl/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+      }),
     );
-  }
 
-  /// Pembuatan & Simpan Tiket Pemesanan ke Database
-  static Future<TicketModel> createTicketBooking({
-    required Destination destination,
-    required String bookingDate,
-    required int guestCount,
-    required String totalPrice,
-    required String paymentMethod,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final ticketId = 'NT-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
-    return TicketModel(
-      id: ticketId,
-      destinationName: destination.name,
-      location: destination.location,
-      bookingDate: bookingDate,
-      guestCount: guestCount,
-      totalPrice: totalPrice,
-      paymentMethod: paymentMethod,
-      qrCodeData: 'NUSATRIP-VOUCHER-$ticketId-${destination.id.toUpperCase()}',
-      status: 'LUNAS',
-    );
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return UserModel.fromJson(data['user']);
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Gagal mendaftarkan akun');
+    }
   }
 }

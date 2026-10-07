@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/destination.dart';
+import '../services/saved_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/safe_image.dart';
@@ -158,9 +159,39 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
                                 onPressed: () => Navigator.pop(context),
                               ),
                             ),
-                            CircleAvatar(
-                              backgroundColor: Colors.black.withValues(alpha: 0.5),
-                              child: const Icon(Icons.favorite_border_rounded, color: Colors.white, size: 20),
+                            ValueListenableBuilder<List<Destination>>(
+                              valueListenable: SavedService.savedDestinationsNotifier,
+                              builder: (context, savedList, child) {
+                                final isFavorite = SavedService.isSaved(destination);
+                                return CircleAvatar(
+                                  backgroundColor: Colors.black.withValues(alpha: 0.5),
+                                  child: IconButton(
+                                    icon: Icon(
+                                      isFavorite
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      color: isFavorite ? Colors.redAccent : Colors.white,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      SavedService.toggleBookmark(destination);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            isFavorite
+                                                ? 'Dihapus dari Destinasi Favorit'
+                                                : 'Ditambahkan ke Destinasi Favorit',
+                                          ),
+                                          duration: const Duration(seconds: 1),
+                                          backgroundColor: isFavorite
+                                              ? Colors.redAccent
+                                              : AppTheme.primary,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
